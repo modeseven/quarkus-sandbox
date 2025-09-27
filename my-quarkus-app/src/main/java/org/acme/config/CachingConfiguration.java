@@ -15,11 +15,26 @@ public class CachingConfiguration {
     @ConfigProperty(name = "app.caching.tablefacility.ttl", defaultValue = "3600")
     int tablefacilityTtlSeconds;
 
+    @ConfigProperty(name = "app.caching.type", defaultValue = "in-memory")
+    String cacheType;
+
     public boolean isCachingEnabled() {
         return cachingEnabled;
     }
 
     public int getTablefacilityTtlSeconds() {
         return tablefacilityTtlSeconds;
+    }
+
+    public String getCacheType() {
+        return cacheType;
+    }
+
+    public boolean isRedisCache() {
+        return "redis".equalsIgnoreCase(cacheType);
+    }
+
+    public boolean isInMemoryCache() {
+        return "in-memory".equalsIgnoreCase(cacheType);
     }
 }

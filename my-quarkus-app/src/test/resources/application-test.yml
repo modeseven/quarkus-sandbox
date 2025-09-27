@@ -1,0 +1,14 @@
+# Test configuration for TransactionResourceIntegrationTest
+app:
+  transaction:
+    wrapper:
+      enabled: true
+  caching:
+    enabled: true
+    tablefacility:
+      ttl: 3600
+
+# Use standalone Redis client for tests
+quarkus:
+  redis:
+    client-type: standalone

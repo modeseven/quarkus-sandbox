@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 @Alternative
-public class TestResponseCacheServiceImpl implements ResponseCacheService {
+public class TestResponseCacheServiceImpl {
 
     private static final Logger LOG = Logger.getLogger(TestResponseCacheServiceImpl.class);
     private static final String CACHE_KEY_PREFIX = "tf_cache_";
@@ -35,7 +35,6 @@ public class TestResponseCacheServiceImpl implements ResponseCacheService {
     @Inject
     CachingConfiguration cachingConfiguration;
 
-    @Override
     public CiclopsResponse processResponse(CiclopsResponse response, String trxId) {
         if (response == null || response.getFields() == null) {
             return response;

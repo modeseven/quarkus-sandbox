@@ -1,20 +1,28 @@
 package org.acme;
 
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.acme.dto.TransactionRequestDTO;
-import org.acme.qualifiers.CachedTransactionRunnerQualifier;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 @Path("/api")
 public class TransactionResource {
 
     @Inject
-    @CachedTransactionRunnerQualifier
-    TransactionRunner transactionRunner;
+    @Named("testTransactionRunner")
+    TransactionRunner testRunner;
+    
+    @Inject
+    @Named("cachedTransactionRunner")
+    TransactionRunner wrappedRunner;
+    
+    @ConfigProperty(name = "app.transaction.wrapper.enabled", defaultValue = "false")
+    boolean wrapperEnabled;
 
     @POST
     @Path("/transaction")
@@ -24,6 +32,9 @@ public class TransactionResource {
         if (request == null || request.getFields() == null) {
             throw new IllegalArgumentException("Request or fields cannot be null");
         }
-        return transactionRunner.processTransaction(request.getFields(), request.getTrxId());
+        
+        // Simple conditional logic - much cleaner!
+        TransactionRunner runner = wrapperEnabled ? wrappedRunner : testRunner;
+        return runner.processTransaction(request.getFields(), request.getTrxId());
     }
 } 
