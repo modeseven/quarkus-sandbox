@@ -30,6 +30,10 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TransactionResourceIntegrationTest {
 
     @Inject
+    @Named("selectedTransactionRunner")
+    TransactionRunner selectedRunner;
+
+    @Inject
     @Named("cachedTransactionRunner")
     TransactionRunner cachedRunner;
 
@@ -51,6 +55,18 @@ public class TransactionResourceIntegrationTest {
         // Clear cache before each test
         // Note: Cache clearing depends on the cache implementation
         // For in-memory cache, we'll rely on test isolation
+    }
+
+    @Test
+    void testSelectedRunner_ShouldBeCachedRunner() {
+        // Verify that the DI-selected runner is the cached runner
+        assertNotNull(selectedRunner, "Selected runner should not be null");
+        // Test the behavior: cached runner should add postprocessing timestamp
+        Map<String, String> testFields = Map.of("test", "value");
+        CiclopsResponse response = selectedRunner.processTransaction(testFields, "test123");
+        assertNotNull(response, "Response should not be null");
+        assertTrue(response.getFields().containsKey("_postprocessing_timestamp"), 
+            "Cached runner should add _postprocessing_timestamp field");
     }
 
     @Test

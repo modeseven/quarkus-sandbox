@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import org.acme.cache.qualifiers.DefaultCacheImpl;
 import org.acme.config.CachingConfiguration;
 import org.jboss.logging.Logger;
 
