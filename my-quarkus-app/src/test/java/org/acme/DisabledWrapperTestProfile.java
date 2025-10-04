@@ -5,13 +5,13 @@ import io.quarkus.test.junit.QuarkusTestProfile;
 import java.util.Map;
 
 /**
- * Test profile for testing with wrapper disabled
+ * Test profile for testing with caching disabled (direct test runner)
  */
 public class DisabledWrapperTestProfile implements QuarkusTestProfile {
     @Override
     public Map<String, String> getConfigOverrides() {
         return Map.of(
-            "app.transaction.wrapper.enabled", "false"
+            "app.caching.enabled", "false"
         );
     }
 }

@@ -6,8 +6,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.CiclopsResponse;
 import org.acme.config.CachingConfiguration;
+import org.acme.constants.CacheConstants;
 import org.jboss.logging.Logger;
-
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,14 +15,13 @@ import java.util.stream.Collectors;
 /**
  * Service for caching response data, specifically for tablefacility fields.
  * This service extracts tablefacility fields from responses and caches them
- * with a generated cache key, then updates the response to include the cache key.
+ * with a generated cache key, then updates the response to include the cache
+ * key.
  */
 @ApplicationScoped
 public class ResponseCacheService {
 
     private static final Logger LOG = Logger.getLogger(ResponseCacheService.class);
-    private static final String CACHE_KEY_PREFIX = "tf_cache_";
-    private static final String TABLEFACILITY_PREFIX = "tablefacility";
 
     @Inject
     CacheService cacheService;
@@ -46,39 +45,51 @@ public class ResponseCacheService {
 
         // Check if we should cache this response
         Map<String, List<String>> allFields = response.getFields();
-        
-        // We should cache if there are tablefacility fields 
+
+        // We should cache if there are tablefacility fields
         boolean hasTablefacilityFields = allFields.keySet().stream()
-                .anyMatch(key -> key.toLowerCase().startsWith(TABLEFACILITY_PREFIX));        
-        
-        // Only cache if there are tablefacility fields      
+                .anyMatch(key -> key.toLowerCase().startsWith(CacheConstants.TABLEFACILITY_PREFIX));
+
+        // Only cache if there are tablefacility fields
         if (!hasTablefacilityFields) {
             LOG.debug("No tablefacility fields found, no caching needed");
             return response;
         }
 
-        // Extract tablefacility fields
-        Map<String, List<String>> tablefacilityFields = extractTablefacilityFields(allFields);
-
         try {
+            // Partition fields into tablefacility and non-tablefacility in one operation
+            Map<Boolean, Map<String, List<String>>> partitionedFields = allFields.entrySet().stream()
+                    .collect(Collectors.partitioningBy(
+                            entry -> entry.getKey().toLowerCase().startsWith(CacheConstants.TABLEFACILITY_PREFIX),
+                            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+
+            Map<String, List<String>> tablefacilityFields = partitionedFields.get(true);
+            Map<String, List<String>> nonTablefacilityFields = partitionedFields.get(false);
+
+            LOG.debugf("Partitioned fields - tablefacility: %d, non-tablefacility: %d",
+                    tablefacilityFields.size(), nonTablefacilityFields.size());
+            LOG.debugf("Tablefacility fields: %s", tablefacilityFields.keySet());
+            LOG.debugf("Non-tablefacility fields: %s", nonTablefacilityFields.keySet());
+
             // Generate cache key
             String cacheKey = generateCacheKey(trxId);
-            
-            // Combine tablefacility and hydrated fields for caching
-            Map<String, List<String>> fieldsToCache = new HashMap<>();
-            fieldsToCache.putAll(tablefacilityFields);
-            
-            // Serialize all fields to cache
-            String serializedData = serializeFields(fieldsToCache);
-            
+
+            // Serialize tablefacility fields to cache
+            String serializedData = serializeFields(tablefacilityFields);
+
             // Cache the data with configured TTL
             cacheService.put(cacheKey, serializedData, cachingConfiguration.getTablefacilityTtlSeconds());
-            
-            LOG.infof("Cached %d fields (tablefacility + hydrated) with key: %s", fieldsToCache.size(), cacheKey);
-            
-            // Create new response without tablefacility fields but with cache key
-            return createResponseWithCacheKey(allFields, tablefacilityFields, cacheKey);
-            
+
+            LOG.infof("Cached %d fields (tablefacility) with key: %s", tablefacilityFields.size(), cacheKey);
+
+            // Add cache key to the non-tablefacility fields
+            List<String> cacheKeyValue = Arrays.asList(cacheKey);
+            nonTablefacilityFields.put(CacheConstants.CACHE_KEY_FIELD, cacheKeyValue);
+
+            // Update the response fields
+            response.setFields(nonTablefacilityFields);
+            return response;
+
         } catch (Exception e) {
             LOG.errorf("Error processing response for caching: %s", e.getMessage());
             // Return original response if caching fails
@@ -86,26 +97,12 @@ public class ResponseCacheService {
         }
     }
 
-
-    /**
-     * Extracts fields that start with the tablefacility prefix
-     */
-    private Map<String, List<String>> extractTablefacilityFields(Map<String, List<String>> allFields) {
-        return allFields.entrySet().stream()
-                .filter(entry -> entry.getKey().toLowerCase().startsWith(TABLEFACILITY_PREFIX))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-    }
-
     /**
      * Generates a unique cache key for the transaction
      */
     private String generateCacheKey(String trxId) {
-        return CACHE_KEY_PREFIX + trxId + "_" + System.currentTimeMillis();
+        return CacheConstants.CACHE_KEY_PREFIX + trxId + "_" + System.currentTimeMillis();
     }
-
 
     /**
      * Serializes all fields to JSON string
@@ -115,32 +112,9 @@ public class ResponseCacheService {
         Map<String, String> serializableFields = fields.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
-                        entry -> entry.getValue().isEmpty() ? "" : entry.getValue().get(0)
-                ));
-        
+                        entry -> entry.getValue().isEmpty() ? "" : entry.getValue().get(0)));
+
         return objectMapper.writeValueAsString(serializableFields);
-    }
-
-
-    /**
-     * Creates a new response with tablefacility fields removed and cache key added
-     */
-    private CiclopsResponse createResponseWithCacheKey(Map<String, List<String>> allFields, 
-                                                       Map<String, List<String>> tablefacilityFields, 
-                                                       String cacheKey) {
-        // Create new fields map without tablefacility fields
-        Map<String, List<String>> filteredFields = allFields.entrySet().stream()
-                .filter(entry -> !tablefacilityFields.containsKey(entry.getKey()))
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        Map.Entry::getValue
-                ));
-
-        // Add cache key to the response
-        List<String> cacheKeyValue = Arrays.asList(cacheKey);
-        filteredFields.put("tf_cache_key", cacheKeyValue);
-
-        return new CiclopsResponse(filteredFields);
     }
 
 }

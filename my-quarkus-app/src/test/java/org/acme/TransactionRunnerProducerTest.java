@@ -31,7 +31,7 @@ public class TransactionRunnerProducerTest {
 
     @Test
     void testSelectedRunner_ShouldBeCachedRunner() {
-        // With app.transaction.wrapper.enabled=true, should return cached runner
+        // With app.caching.enabled=true, should return cached runner
         assertNotNull(selectedRunner, "Selected runner should not be null");
         // Test the behavior: cached runner should add postprocessing timestamp
         Map<String, String> testFields = Map.of("test", "value");
@@ -50,11 +50,11 @@ public class TransactionRunnerProducerTest {
 
 
 /**
- * Test for TransactionRunnerProducer with wrapper disabled
+ * Test for TransactionRunnerProducer with caching disabled
  */
 @QuarkusTest
 @TestProfile(DisabledWrapperTestProfile.class)
-class TransactionRunnerProducerDisabledWrapperTest {
+class TransactionRunnerProducerDisabledCachingTest {
 
     @Inject
     @Named("selectedTransactionRunner")
@@ -70,7 +70,7 @@ class TransactionRunnerProducerDisabledWrapperTest {
 
     @Test
     void testSelectedRunner_ShouldBeTestRunner() {
-        // With app.transaction.wrapper.enabled=false, should return test runner
+        // With app.caching.enabled=false, should return test runner
         assertNotNull(selectedRunner, "Selected runner should not be null");
         // Test the behavior: test runner should NOT add postprocessing timestamp
         Map<String, String> testFields = Map.of("test", "value");

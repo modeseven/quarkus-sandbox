@@ -60,7 +60,7 @@ public class TransactionResourceSimpleTest {
             .statusCode(200)
             .body("fields._postprocessing_timestamp", notNullValue())
             .body("fields.tf_cache_key", notNullValue()) // Should have cache key
-            .body("fields.tf_cache_key[0]", startsWith("tf_cache_")) // Cache key format
+            .body("fields.tf_cache_key[0]", startsWith("TF_CACHE_")) // Cache key format
             .body("fields.tf_input_found", hasItem("5")); // Should have tf_input_found with count 5
     }
 
@@ -90,7 +90,7 @@ public class TransactionResourceSimpleTest {
 
         // Verify we got a cache key
         assert cacheKey != null;
-        assert cacheKey.startsWith("tf_cache_");
+        assert cacheKey.startsWith("TF_CACHE_");
 
         // Now test cache hydration by resubmitting with the cache key
         TransactionRequestDTO hydrationRequest = new TransactionRequestDTO();
@@ -140,7 +140,7 @@ public class TransactionResourceSimpleTest {
             .getString("fields.tf_cache_key[0]");
 
         assert cacheKey != null;
-        assert cacheKey.startsWith("tf_cache_");
+        assert cacheKey.startsWith("TF_CACHE_");
 
         // Step 2: Use cache key to hydrate new request
         TransactionRequestDTO step2Request = new TransactionRequestDTO();

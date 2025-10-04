@@ -16,8 +16,8 @@ import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for TransactionResource using the test runner (wrapper disabled).
- * This tests the scenario where app.transaction.wrapper.enabled=false
+ * Test for TransactionResource using the test runner (caching disabled).
+ * This tests the scenario where app.caching.enabled=false
  */
 @QuarkusTest
 @TestProfile(TestRunnerTestProfile.class)
@@ -37,7 +37,7 @@ public class TransactionResourceTestRunnerTest {
 
     @Test
     void testSelectedRunner_ShouldBeTestRunner() {
-        // Verify that the DI-selected runner is the test runner when wrapper is disabled
+        // Verify that the DI-selected runner is the test runner when caching is disabled
         assertNotNull(selectedRunner, "Selected runner should not be null");
         // Test the behavior: test runner should NOT add postprocessing timestamp
         Map<String, String> testFields = Map.of("test", "value");

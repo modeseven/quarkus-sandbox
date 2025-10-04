@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.config.CachingConfiguration;
+import org.acme.constants.CacheConstants;
 import org.jboss.logging.Logger;
 
 import java.util.HashMap;
@@ -18,7 +19,6 @@ import java.util.Map;
 public class FieldHydrationService {
 
     private static final Logger LOG = Logger.getLogger(FieldHydrationService.class);
-    private static final String CACHE_KEY_FIELD = "tf_cache_key";
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Inject
@@ -70,10 +70,10 @@ public class FieldHydrationService {
      * Discover the cache key from the input fields
      */
     private String discoverCacheKey(Map<String, String> fields) {
-        if (fields == null || !fields.containsKey(CACHE_KEY_FIELD)) {
+        if (fields == null || !fields.containsKey(CacheConstants.CACHE_KEY_FIELD)) {
             return null;
         }
-        return fields.get(CACHE_KEY_FIELD);
+        return fields.get(CacheConstants.CACHE_KEY_FIELD);
     }
 
     /**

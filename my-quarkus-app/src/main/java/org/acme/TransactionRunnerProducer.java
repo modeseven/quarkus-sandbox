@@ -4,12 +4,14 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.acme.config.CachingConfiguration;
 import org.jboss.logging.Logger;
 
 /**
  * Producer for TransactionRunner that conditionally provides either the cached wrapper
- * or the test implementation based on configuration.
+ * or the test implementation based on caching configuration.
+ * 
+ * Logic: If caching is enabled, use the wrapper; otherwise use the direct test runner.
  */
 @ApplicationScoped
 public class TransactionRunnerProducer {
@@ -24,11 +26,11 @@ public class TransactionRunnerProducer {
     @Named("cachedTransactionRunner")
     TransactionRunner wrappedRunner;
 
-    @ConfigProperty(name = "app.transaction.wrapper.enabled", defaultValue = "false")
-    boolean wrapperEnabled;
+    @Inject
+    CachingConfiguration cachingConfiguration;
 
     /**
-     * Produces the appropriate TransactionRunner implementation based on configuration.
+     * Produces the appropriate TransactionRunner implementation based on caching configuration.
      * 
      * @return The configured transaction runner implementation
      */
@@ -36,13 +38,14 @@ public class TransactionRunnerProducer {
     @ApplicationScoped
     @Named("selectedTransactionRunner")
     public TransactionRunner produceTransactionRunner() {
-        LOG.infof("Configuring transaction runner with wrapper enabled: %s", wrapperEnabled);
+        boolean cachingEnabled = cachingConfiguration.isCachingEnabled();
+        LOG.infof("Configuring transaction runner with caching enabled: %s", cachingEnabled);
         
-        if (wrapperEnabled) {
-            LOG.info("Using cached transaction runner wrapper");
+        if (cachingEnabled) {
+            LOG.info("Caching enabled - using cached transaction runner wrapper");
             return wrappedRunner;
         } else {
-            LOG.info("Using test transaction runner");
+            LOG.info("Caching disabled - using direct test transaction runner");
             return testRunner;
         }
     }
