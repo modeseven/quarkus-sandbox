@@ -34,12 +34,6 @@ public class FieldHydrationService {
      * @return Enhanced fields with cached data merged in, or original fields if no cache hit
      */
     public Map<String, String> hydrateFields(Map<String, String> fields) {
-        // Check if caching is enabled
-        if (!isCachingEnabled()) {
-            LOG.debug("Caching is disabled, returning original fields");
-            return fields;
-        }
-
         // Check if fields contain a cache key
         String cacheKey = discoverCacheKey(fields);
         if (cacheKey == null) {
@@ -59,12 +53,6 @@ public class FieldHydrationService {
         return processCacheHit(fields, cachedValue);
     }
 
-    /**
-     * Check if caching is enabled via application configuration
-     */
-    private boolean isCachingEnabled() {
-        return cachingConfiguration.isCachingEnabled();
-    }
 
     /**
      * Discover the cache key from the input fields

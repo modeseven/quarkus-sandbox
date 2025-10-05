@@ -37,12 +37,6 @@ public class ResponseCacheService {
             return response;
         }
 
-        // Check if caching is enabled
-        if (!cachingConfiguration.isCachingEnabled()) {
-            LOG.debug("Caching is disabled, skipping tablefacility field caching");
-            return response;
-        }
-
         // Check if we should cache this response
         Map<String, List<String>> allFields = response.getFields();
 
@@ -57,14 +51,17 @@ public class ResponseCacheService {
         }
 
         try {
-            // Partition fields into tablefacility and non-tablefacility in one operation
-            Map<Boolean, Map<String, List<String>>> partitionedFields = allFields.entrySet().stream()
-                    .collect(Collectors.partitioningBy(
-                            entry -> entry.getKey().toLowerCase().startsWith(CacheConstants.TABLEFACILITY_PREFIX),
-                            Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
-
-            Map<String, List<String>> tablefacilityFields = partitionedFields.get(true);
-            Map<String, List<String>> nonTablefacilityFields = partitionedFields.get(false);
+            // Separate fields into tablefacility and non-tablefacility
+            Map<String, List<String>> tablefacilityFields = new HashMap<>();
+            Map<String, List<String>> nonTablefacilityFields = new HashMap<>();
+            
+            for (Map.Entry<String, List<String>> entry : allFields.entrySet()) {
+                if (entry.getKey().toLowerCase().startsWith(CacheConstants.TABLEFACILITY_PREFIX)) {
+                    tablefacilityFields.put(entry.getKey(), entry.getValue());
+                } else {
+                    nonTablefacilityFields.put(entry.getKey(), entry.getValue());
+                }
+            }
 
             LOG.debugf("Partitioned fields - tablefacility: %d, non-tablefacility: %d",
                     tablefacilityFields.size(), nonTablefacilityFields.size());
