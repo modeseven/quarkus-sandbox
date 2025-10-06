@@ -3,6 +3,7 @@ package org.acme.cache;
 import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.ValueCommands;
 import io.quarkus.redis.datasource.keys.KeyCommands;
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.cache.qualifiers.RedisCacheImpl;
@@ -19,6 +20,18 @@ public class RedisCacheService implements CacheService {
 
     @Inject
     RedisDataSource redisDataSource;
+
+    @PostConstruct
+    void init() {
+        try {
+            // Perform a lightweight command to establish the connection eagerly.
+            // Using EXISTS on a random key triggers a connection and is safe across Redis/Valkey.
+            getKeyCommands().exists("__startup_ping__");
+            LOG.info("Redis cache connection initialized successfully");
+        } catch (Exception e) {
+            LOG.errorf("Failed to initialize Redis cache connection: %s", e.getMessage());
+        }
+    }
 
     private ValueCommands<String, String> getValueCommands() {
         return redisDataSource.value(String.class);
