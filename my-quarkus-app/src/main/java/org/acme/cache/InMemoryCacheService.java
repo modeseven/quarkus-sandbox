@@ -1,8 +1,8 @@
 package org.acme.cache;
 
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.enterprise.inject.Vetoed;
 import org.acme.cache.qualifiers.DefaultCacheImpl;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,8 +13,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * In-memory cache implementation for development and testing.
  * This is a basic, non-production-ready, thread-safe implementation.
+ * This bean is vetoed and will be created via producer only when caching is enabled.
  */
-@ApplicationScoped
+@Vetoed
 @DefaultCacheImpl
 public class InMemoryCacheService implements CacheService {
 
@@ -42,7 +43,7 @@ public class InMemoryCacheService implements CacheService {
     });
 
     @PostConstruct
-    void initCleanupTask() {
+    public void initCleanupTask() {
         // Initial delay 3 minutes, then every 3 minutes
         cleanupExecutor.scheduleAtFixedRate(this::purgeExpiredEntries, 3, 3, TimeUnit.MINUTES);
     }

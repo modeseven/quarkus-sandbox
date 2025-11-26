@@ -38,7 +38,6 @@ public class TransactionResourceIntegrationTest {
     TransactionRunner cachedRunner;
 
     @Inject
-    @DefaultCacheImpl
     CacheService cacheService;
 
     @Inject

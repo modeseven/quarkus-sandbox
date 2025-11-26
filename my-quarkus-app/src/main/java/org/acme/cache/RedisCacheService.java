@@ -4,25 +4,39 @@ import io.quarkus.redis.datasource.RedisDataSource;
 import io.quarkus.redis.datasource.value.ValueCommands;
 import io.quarkus.redis.datasource.keys.KeyCommands;
 import jakarta.annotation.PostConstruct;
-import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Vetoed;
 import jakarta.inject.Inject;
 import org.acme.cache.qualifiers.RedisCacheImpl;
 import org.jboss.logging.Logger;
 
 /**
- * Redis cache implementation using Quarkus Redis client
+ * Redis cache implementation using Quarkus Redis client.
+ * This bean is vetoed and will be created via producer only when caching is enabled.
  */
-@ApplicationScoped
+@Vetoed
 @RedisCacheImpl
 public class RedisCacheService implements CacheService {
 
     private static final Logger LOG = Logger.getLogger(RedisCacheService.class);
 
+    private RedisDataSource redisDataSource;
+
+    // Default constructor for CDI (when not vetoed)
+    public RedisCacheService() {
+    }
+
+    // Constructor for manual creation
+    public RedisCacheService(RedisDataSource redisDataSource) {
+        this.redisDataSource = redisDataSource;
+    }
+
     @Inject
-    RedisDataSource redisDataSource;
+    public void setRedisDataSource(RedisDataSource redisDataSource) {
+        this.redisDataSource = redisDataSource;
+    }
 
     @PostConstruct
-    void init() {
+    public void init() {
         try {
             // Perform a lightweight command to establish the connection eagerly.
             // Using EXISTS on a random key triggers a connection and is safe across Redis/Valkey.
